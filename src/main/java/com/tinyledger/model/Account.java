@@ -36,7 +36,7 @@ public class Account {
     }
 
     public List<Transaction> getTransactions() {
-        return new ArrayList<>(transactions);
+        return List.copyOf(transactions);
     }
 
     public Instant getCreatedAt() {
