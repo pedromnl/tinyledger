@@ -16,6 +16,11 @@ From the project root:
 ```bash
 ./mvnw spring-boot:run
 ```
+If you have a permission denied error, you may need to make the Maven wrapper executable:
+
+```bash
+chmod +x mvnw
+```
 
 The API defaults to port `8080`
 
