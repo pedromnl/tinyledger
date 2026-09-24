@@ -17,9 +17,9 @@ From the project root:
 ./mvnw spring-boot:run
 ```
 
-The API defaults to `http://localhost:8080`.
+The API defaults to port `8080`
 
-## OpenAPI / Swagger
+## OpenAPI
 
 Once the app is running, OpenAPI documentation is available on:
 
