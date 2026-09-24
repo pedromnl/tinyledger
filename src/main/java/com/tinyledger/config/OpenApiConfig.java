@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
                 title = "Tiny Ledger API",
                 version = "1.0.0",
                 description = "In-memory ledger API for managing bank accounts",
-                contact = @Contact(name = "Tiny Ledger")
+                contact = @Contact(name = "Pedro Lopes", email = "pedrolopes095@gmail.com")
         )
 )
 public class OpenApiConfig {
