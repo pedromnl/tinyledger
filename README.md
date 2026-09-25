@@ -170,18 +170,21 @@ curl http://localhost:8080/api/v1/accounts/550e8400-e29b-41d4-a716-446655440000/
 
 ## Assumptions
 
+- Ledger manages multiple accounts, each with its own transaction history and balance.
 - Accounts are kept in memory while the app is running.
+- A couple of accounts are pre-populated on startup for testing purposes.
 - There is no authentication or authorization layer.
 - Account names must have at least three characters.
 - Amounts must be positive numbers and withdrawals cannot exceed the available balance.
 - Accounts start with a balance of zero.
+- Transaction history is retained for the lifetime of the account
 
 ## Design decisions
 
 - Deposit and withdrawal are modeled as separate API endpoints because they are distinct business operations with different validation rules and error handling.
 - Balance is stored directly on the `Account` domain model so the current balance can be returned without scanning all transactions for every balance lookup.
   - Downside: the balance becomes a second source of truth in addition to transaction history, so it must be kept consistent with every deposit and withdrawal, making the system more prone to inconsistency and bugs.
-- The `getBalance`, `deposit`, and `withdraw` operations are synchronized to avoid race conditions when multiple threads update the same account concurrently.
+- Operations on the `Account` mutable state are marked as synchronized to avoid race conditions when multiple threads update the same account concurrently.
 - Transaction history is retained on the account to support auditability and historical queries.
 
 ## Testing strategy

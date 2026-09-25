@@ -14,8 +14,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -43,8 +49,8 @@ class AccountControllerIntegrationTest {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Checking Account");
 
         mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accountName").value("Checking Account"))
                 .andExpect(jsonPath("$.accountId").isNotEmpty());
@@ -55,8 +61,8 @@ class AccountControllerIntegrationTest {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Ab");
 
         mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.errors.accountName").value("Account name must contain at least 3 characters"));
@@ -66,8 +72,8 @@ class AccountControllerIntegrationTest {
     void getAccountById_accountExists_shouldReturnAccountDetails() throws Exception {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Test Account");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -76,7 +82,7 @@ class AccountControllerIntegrationTest {
         UUID accountId = UUID.fromString(objectMapper.readTree(createResponse).get("accountId").asText());
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", accountId)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountName").value("Test Account"));
     }
@@ -86,7 +92,7 @@ class AccountControllerIntegrationTest {
         UUID nonExistentId = UUID.randomUUID();
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", nonExistentId)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -95,8 +101,8 @@ class AccountControllerIntegrationTest {
     void getAccountBalance_accountExists_shouldReturnBalance() throws Exception {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Balance Test");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -105,7 +111,7 @@ class AccountControllerIntegrationTest {
         UUID accountId = UUID.fromString(objectMapper.readTree(createResponse).get("accountId").asText());
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/balance", accountId)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("0"));
     }
@@ -114,8 +120,8 @@ class AccountControllerIntegrationTest {
     void deposit_accountExists_shouldIncreaseBalanceAndReturnTransaction() throws Exception {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Deposit Test");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -125,14 +131,14 @@ class AccountControllerIntegrationTest {
 
         DepositRequest depositRequest = new DepositRequest(BigDecimal.valueOf(500));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(depositRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(depositRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.transactionType").value("DEPOSIT"))
                 .andExpect(jsonPath("$.amount").value(500));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/balance", accountId)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("500"));
     }
@@ -141,8 +147,8 @@ class AccountControllerIntegrationTest {
     void deposit_negativeAmount_shouldReturnBadRequest() throws Exception {
         CreateAccountRequestDto createRequest = new CreateAccountRequestDto("Valid Account");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -153,8 +159,8 @@ class AccountControllerIntegrationTest {
         DepositRequest request = new DepositRequest(BigDecimal.valueOf(-50));
 
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.errors.amount").value("Amount must be greater than zero"));
@@ -166,17 +172,91 @@ class AccountControllerIntegrationTest {
         DepositRequest request = new DepositRequest(BigDecimal.valueOf(100));
 
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", nonExistentId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void concurrentWithdrawals_shouldMaintainCorrectBalanceAndTransactionHistory() throws Exception {
+        CreateAccountRequestDto request = new CreateAccountRequestDto("Concurrent Withdrawal Test");
+
+        String createResponse = mockMvc.perform(post("/api/v1/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        UUID accountId = UUID.fromString(objectMapper.readTree(createResponse).get("accountId").asText());
+
+        // Deposit an initial amount of 500 to allow for withdrawals
+        DepositRequest depositRequest = new DepositRequest(BigDecimal.valueOf(500));
+
+        mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", accountId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(depositRequest)))
+                .andExpect(status().isOk());
+
+        // Simulate 11 concurrent withdrawal requests of 50 each.
+        int numberOfWithdrawals = 11;
+        BigDecimal withdrawalAmount = BigDecimal.valueOf(50);
+
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<Integer>> futures = new ArrayList<>();
+
+            for (int i = 0; i < numberOfWithdrawals; i++) {
+                futures.add(executor.submit(() -> {
+                    WithdrawalRequest withdrawalRequest =
+                            new WithdrawalRequest(withdrawalAmount);
+
+                    return mockMvc.perform(
+                                    post(
+                                            "/api/v1/accounts/{accountId}/transactions/withdrawal",
+                                            accountId
+                                    )
+                                            .contentType(MediaType.APPLICATION_JSON)
+                                            .content(objectMapper.writeValueAsString(withdrawalRequest)))
+                            .andReturn()
+                            .getResponse()
+                            .getStatus();
+                }));
+            }
+
+            List<Integer> statuses = new ArrayList<>();
+
+            for (Future<Integer> future : futures) {
+                statuses.add(future.get());
+            }
+
+            // expect 10 successful withdrawals (200) and 1 failed withdrawal due to insufficient funds (409)
+            assertThat(statuses)
+                    .containsExactlyInAnyOrder(
+                            200, 200, 200, 200, 200,
+                            200, 200, 200, 200, 200,
+                            409
+                    );
+        }
+
+        // After all withdrawals, the balance should be 0
+        mockMvc.perform(
+                        get("/api/v1/accounts/{accountId}/balance", accountId))
+                .andExpect(status().isOk())
+                .andExpect(content().string("0"));
+
+        // The transaction history should contain 11 transactions (1 deposit and 10 successful withdrawals)
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/transactions", accountId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(11));
     }
 
     @Test
     void withdrawal_accountExistsAndSufficientFunds_shouldDecreaseBalanceAndReturnTransaction() throws Exception {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Withdrawal Test");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -187,20 +267,20 @@ class AccountControllerIntegrationTest {
         // Deposit first to have funds available for withdrawal
         DepositRequest depositRequest = new DepositRequest(BigDecimal.valueOf(1000));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(depositRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(depositRequest)))
                 .andExpect(status().isOk());
 
         WithdrawalRequest withdrawalRequest = new WithdrawalRequest(BigDecimal.valueOf(300));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/withdrawal", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(withdrawalRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(withdrawalRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.transactionType").value("WITHDRAWAL"))
                 .andExpect(jsonPath("$.amount").value(300));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/balance", accountId)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string("700"));
     }
@@ -209,8 +289,8 @@ class AccountControllerIntegrationTest {
     void withdrawal_accountExistsButInsufficientFunds_shouldReturnConflict() throws Exception {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Insufficient Funds Test");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -221,8 +301,8 @@ class AccountControllerIntegrationTest {
         // Attempt withdrawal with insufficient balance
         WithdrawalRequest withdrawalRequest = new WithdrawalRequest(BigDecimal.valueOf(500));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/withdrawal", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(withdrawalRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(withdrawalRequest)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
     }
@@ -231,8 +311,8 @@ class AccountControllerIntegrationTest {
     void withdrawal_negativeAmount_shouldReturnBadRequest() throws Exception {
         CreateAccountRequestDto createRequest = new CreateAccountRequestDto("Valid Account");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -243,8 +323,8 @@ class AccountControllerIntegrationTest {
         WithdrawalRequest request = new WithdrawalRequest(BigDecimal.valueOf(-50));
 
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/withdrawal", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.errors.amount").value("Amount must be greater than zero"));
@@ -256,8 +336,8 @@ class AccountControllerIntegrationTest {
         WithdrawalRequest request = new WithdrawalRequest(BigDecimal.valueOf(100));
 
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/withdrawal", nonExistentId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
     }
 
@@ -265,8 +345,8 @@ class AccountControllerIntegrationTest {
     void getAccountTransactions_accountExists_shouldReturnTransactionHistoryOrderedByLatest() throws Exception {
         CreateAccountRequestDto request = new CreateAccountRequestDto("Transaction History Test");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -276,24 +356,24 @@ class AccountControllerIntegrationTest {
 
         DepositRequest deposit1 = new DepositRequest(BigDecimal.valueOf(1000));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(deposit1)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(deposit1)))
                 .andExpect(status().isOk());
 
         DepositRequest deposit2 = new DepositRequest(BigDecimal.valueOf(500));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(deposit2)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(deposit2)))
                 .andExpect(status().isOk());
 
         WithdrawalRequest withdrawal = new WithdrawalRequest(BigDecimal.valueOf(200));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/withdrawal", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(withdrawal)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(withdrawal)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/transactions", accountId)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].transactionType").value("WITHDRAWAL"))
@@ -306,7 +386,7 @@ class AccountControllerIntegrationTest {
         UUID nonExistentId = UUID.randomUUID();
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/transactions", nonExistentId)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
 
@@ -314,8 +394,8 @@ class AccountControllerIntegrationTest {
     void endToEndAccountLifecycle_shouldManageAccountCorrectly() throws Exception {
         CreateAccountRequestDto createRequest = new CreateAccountRequestDto("Lifecycle Test Account");
         String createResponse = mockMvc.perform(post("/api/v1/accounts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -329,8 +409,8 @@ class AccountControllerIntegrationTest {
 
         DepositRequest deposit = new DepositRequest(BigDecimal.valueOf(1000));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/deposit", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(deposit)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(deposit)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/balance", accountId))
@@ -339,8 +419,8 @@ class AccountControllerIntegrationTest {
 
         WithdrawalRequest withdrawal = new WithdrawalRequest(BigDecimal.valueOf(250));
         mockMvc.perform(post("/api/v1/accounts/{accountId}/transactions/withdrawal", accountId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(withdrawal)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(withdrawal)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/balance", accountId))

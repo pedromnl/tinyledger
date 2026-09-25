@@ -31,16 +31,16 @@ public class Account {
         return accountName;
     }
 
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
     public synchronized BigDecimal getBalance() {
         return balance;
     }
 
-    public List<Transaction> getTransactions() {
+    public synchronized List<Transaction> getTransactions() {
         return List.copyOf(transactions);
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
     }
 
     public synchronized Transaction deposit(BigDecimal amount) {
